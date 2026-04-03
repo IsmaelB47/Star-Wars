@@ -1,20 +1,55 @@
-name: BrowserStack Integration
+name: BrowserStack Playwright Test
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
   browserstack-test:
     runs-on: ubuntu-latest
 
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run BrowserStack Tests
-        env:
-          BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
-          BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-        run: echo "Connected to BrowserStack"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install
+
+      - name: Start app
+        run: |
+          npm run web -- --port 3000 > app.log 2>&1 &
+          npx wait-on http://127.0.0.1:3000
+
+      - name: Setup BrowserStack environment
+        uses: browserstack/github-actions/setup-env@master
+        with:
+          username: ${{ secrets.BROWSERSTACK_USERNAME }}
+          access-key: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+
+      - name: Start BrowserStack Local
+        uses: browserstack/github-actions/setup-local@master
+        with:
+          local-testing: start
+
+      - name: Run Playwright test on BrowserStack
+        run: npx playwright test tests/browserstack.spec.js
+
+      - name: Stop BrowserStack Local
+        if: always()
+        uses: browserstack/github-actions/setup-local@master
+        with:
+          local-testing: stop
