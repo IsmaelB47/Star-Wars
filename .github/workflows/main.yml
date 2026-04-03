@@ -30,10 +30,10 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Start Expo Web App
+      - name: Start Web App
         run: |
-          npx expo start --web --non-interactive --port 3000 > app.log 2>&1 &
-          npx wait-on http://127.0.0.1:3000 --timeout 120000 || (echo "Expo failed to start" && cat app.log && exit 1)
+          npm run web > app.log 2>&1 &
+          npx wait-on http://127.0.0.1:8081 --timeout 180000 || (echo "App failed to start" && cat app.log && exit 1)
 
       - name: Setup BrowserStack environment
         uses: browserstack/github-actions/setup-env@master
