@@ -9,6 +9,7 @@ on:
 jobs:
   browserstack-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     env:
       BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
@@ -27,12 +28,12 @@ jobs:
         run: npm install
 
       - name: Install Playwright
-        run: npx playwright install
+        run: npx playwright install --with-deps chromium
 
       - name: Start Expo Web App
         run: |
           npx expo start --web --non-interactive --port 3000 > app.log 2>&1 &
-          npx wait-on http://127.0.0.1:3000
+          npx wait-on http://127.0.0.1:3000 --timeout 120000 || (echo "Expo failed to start" && cat app.log && exit 1)
 
       - name: Setup BrowserStack environment
         uses: browserstack/github-actions/setup-env@master
