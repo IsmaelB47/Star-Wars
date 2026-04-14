@@ -1,55 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function FilmsScreen() {
   const [films, setFilms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-// Fetch data from SWAPI when the screen loads
+  const [submittedText, setSubmittedText] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+
   useEffect(() => {
     fetchFilms();
   }, []);
 
   const fetchFilms = async () => {
     try {
-      const response = await fetch('https://www.swapi.tech/api/films');
+      const response = await fetch("https://www.swapi.tech/api/films");
       const data = await response.json();
       setFilms(data.result || data.results || []);
     } catch (err) {
-      setError('Failed to load films.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  if (loading)
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
         <Text>Loading films...</Text>
       </View>
     );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text>{error}</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Films</Text>
-  {/* Display the data using FlatList */}
+
+      <View style={styles.textInputContainer}>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Search Films..."
+          onSubmitEditing={(e) => {
+            setSubmittedText(e.nativeEvent.text);
+            setModalVisible(true);
+          }}
+        />
+      </View>
+
+      <Modal animationType="slide" transparent={true} visible={modalVisible}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalInner}>
+            <Text style={styles.modalText}>
+              Searching for film: {submittedText}
+            </Text>
+            <Text
+              style={styles.modalButton}
+              onPress={() => setModalVisible(false)}
+            >
+              Dismiss
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       <FlatList
         data={films}
         keyExtractor={(item, index) => item.uid?.toString() || index.toString()}
         renderItem={({ item }) => (
           <View style={styles.item}>
             <Text style={styles.itemText}>
-              {item.properties?.title || item.title || item.name}
+              {item.properties?.title || item.title}
             </Text>
           </View>
         )}
@@ -59,27 +86,34 @@ export default function FilmsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, padding: 20, backgroundColor: "ghostwhite" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 10 },
+  textInputContainer: { marginBottom: 20 },
+  textInput: {
+    height: 40,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    paddingHorizontal: 10,
+  },
+  item: { padding: 15, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  itemText: { fontSize: 18 },
+  modalContainer: {
     flex: 1,
-    padding: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  modalInner: {
+    backgroundColor: "azure",
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "lightsteelblue",
+    borderRadius: 5,
+    alignItems: "center",
+    width: "80%",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  item: {
-    backgroundColor: '#f2f2f2',
-    padding: 14,
-    marginBottom: 10,
-    borderRadius: 8,
-  },
-  itemText: {
-    fontSize: 18,
-  },
+  modalText: { fontSize: 16, margin: 5, color: "slategrey" },
+  modalButton: { fontWeight: "bold", marginTop: 15, color: "slategrey" },
 });
